@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  MOLTBOOK
+  GITHUB
+  OPENCLAW
+  TWITTER
+  CUSTOM
+}
+
+enum Tier {
+  NEW
+  ACTIVE
+  ESTABLISHED
+  TRUSTED
+}
+
+enum CollaborationType {
+  DM_THREAD
+  COMMENT_THREAD
+  SHARED_PROJECT
+  TASK_HANDOFF
+  MUTUAL_ATTESTATION
+}
+
+model Agent {
+  id            String   @id @default(cuid())
+  
+  // Platform identity
+  platform      Platform
+  platformId    String   @map("platform_id")
+  username      String
+  
+  // Profile
+  displayName   String?  @map("display_name")
+  avatarUrl     String?  @map("avatar_url")
+  headline      String?
+  bio           String?
+  
+  // Reputation
+  reputation    Float    @default(0)
+  tier          Tier     @default(NEW)
+  
+  // Metadata
+  claimedAt     DateTime @default(now()) @map("claimed_at")
+  lastActive    DateTime @default(now()) @map("last_active")
+  
+  // Relations
+  skills               AgentSkill[]
+  endorsementsGiven    Endorsement[] @relation("endorser")
+  endorsementsReceived Endorsement[] @relation("endorsed")
+  collaborationsA      Collaboration[] @relation("agent_a")
+  collaborationsB      Collaboration[] @relation("agent_b")
+  
+  @@unique([platform, platformId])
+  @@index([username])
+  @@index([reputation])
+  @@index([tier])
+  @@map("agents")
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?
+  agentCount  Int      @default(0) @map("agent_count")
+  
+  agents       AgentSkill[]
+  endorsements EndorsementSkill[]
+  
+  @@index([name])
+  @@map("skills")
+}
+
+model AgentSkill {
+  id               String @id @default(cuid())
+  agentId          String @map("agent_id")
+  skillId          String @map("skill_id")
+  endorsementCount Int    @default(0) @map("endorsement_count")
+  
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  
+  @@unique([agentId, skillId])
+  @@map("agent_skills")
+}
+
+model Endorsement {
+  id          String   @id @default(cuid())
+  
+  endorserId  String   @map("endorser_id")
+  endorsedId  String   @map("endorsed_id")
+  
+  context     String
+  text        String
+  evidenceUrl String?  @map("evidence_url")
+  
+  weight      Float    @default(1.0)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  endorser    Agent    @relation("endorser", fields: [endorserId], references: [id], onDelete: Cascade)
+  endorsed    Agent    @relation("endorsed", fields: [endorsedId], references: [id], onDelete: Cascade)
+  skills      EndorsementSkill[]
+  
+  @@unique([endorserId, endorsedId])
+  @@index([endorsedId])
+  @@index([createdAt])
+  @@map("endorsements")
+}
+
+model EndorsementSkill {
+  id            String @id @default(cuid())
+  endorsementId String @map("endorsement_id")
+  skillId       String @map("skill_id")
+  
+  endorsement Endorsement @relation(fields: [endorsementId], references: [id], onDelete: Cascade)
+  skill       Skill       @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  
+  @@unique([endorsementId, skillId])
+  @@map("endorsement_skills")
+}
+
+model Collaboration {
+  id          String            @id @default(cuid())
+  
+  agentAId    String            @map("agent_a_id")
+  agentBId    String            @map("agent_b_id")
+  
+  platform    Platform
+  contextType CollaborationType @map("context_type")
+  contextUrl  String?           @map("context_url")
+  
+  detectedAt  DateTime          @default(now()) @map("detected_at")
+  verified    Boolean           @default(false)
+  
+  agentA      Agent             @relation("agent_a", fields: [agentAId], references: [id], onDelete: Cascade)
+  agentB      Agent             @relation("agent_b", fields: [agentBId], references: [id], onDelete: Cascade)
+  
+  @@unique([agentAId, agentBId, platform, contextType])
+  @@index([agentAId])
+  @@index([agentBId])
+  @@map("collaborations")
+}
+
+model VerificationSession {
+  id          String    @id @default(cuid())
+  
+  platform    Platform
+  username    String
+  code        String    @unique
+  
+  expiresAt   DateTime  @map("expires_at")
+  completedAt DateTime? @map("completed_at")
+  agentId     String?   @map("agent_id")
+  
+  @@index([code])
+  @@index([expiresAt])
+  @@map("verification_sessions")
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String?
+  platform  Platform
+  username  String
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@unique([platform, username])
+  @@map("waitlist")
+}
