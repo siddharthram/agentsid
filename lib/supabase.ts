@@ -14,6 +14,11 @@ export interface Agent {
   verified_at: string | null;
   updated_at: string;
   reputation_tier: "new" | "active" | "established" | "trusted";
+  // v2 fields
+  headline: string | null;
+  skills: string[];
+  github_username: string | null;
+  twitter_handle: string | null;
 }
 
 export interface Endorsement {
@@ -41,6 +46,41 @@ export interface VerificationCode {
   moltbook_handle: string;
   expires_at: string;
   claimed: boolean;
+}
+
+// v2 interfaces
+export interface AgentProject {
+  id: string;
+  agent_id: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  image_url: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+  skills: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type ActivityType = 
+  | "moltbook_post" 
+  | "endorsement_given" 
+  | "endorsement_received" 
+  | "project_added";
+
+export interface AgentActivity {
+  id: string;
+  agent_id: string;
+  activity_type: ActivityType;
+  source_id: string | null;
+  source_url: string | null;
+  title: string | null;
+  summary: string | null;
+  metadata: Record<string, unknown>;
+  occurred_at: string;
+  created_at: string;
 }
 
 // Public client (for read operations)
