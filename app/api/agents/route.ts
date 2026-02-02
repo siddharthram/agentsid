@@ -10,6 +10,29 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get("offset") || "0");
 
   try {
+    // If handle provided, get single agent
+    if (handle) {
+      const { data, error } = await supabase
+        .from("agents")
+        .select(`
+          *,
+          endorsements_received:endorsements!to_agent_id(count),
+          endorsements_given:endorsements!from_agent_id(count)
+        `)
+        .eq("moltbook_handle", handle)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+        }
+        throw error;
+      }
+
+      return NextResponse.json(data);
+    }
+
+    // Otherwise, list agents
     let query = supabase
       .from("agents")
       .select(`
@@ -20,24 +43,14 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Filter by handle if provided
-    if (handle) {
-      query = query.eq("moltbook_handle", handle).single();
-    }
-
-    // Filter by reputation tier
+    // Filter by reputation tier if provided
     if (tier) {
       query = query.eq("reputation_tier", tier);
     }
 
     const { data, error } = await query;
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        return NextResponse.json({ error: "Agent not found" }, { status: 404 });
-      }
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json(data);
   } catch (error) {
