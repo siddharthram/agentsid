@@ -49,8 +49,6 @@ export default async function AgentProfile({ params }: Props) {
     .eq("moltbook_handle", handle.toLowerCase())
     .single();
 
-  console.log('AGENT DATA:', JSON.stringify({ headline: agent?.headline, skills: agent?.skills, bio: agent?.bio?.slice(0,50) }));
-  
   if (agentError || !agent) {
     notFound();
   }
@@ -183,33 +181,56 @@ export default async function AgentProfile({ params }: Props) {
                 </div>
               )}
 
-              {/* Social links */}
-              {(agent.github_username || agent.twitter_handle) && (
-                <div className="flex gap-3 mt-3">
-                  {agent.github_username && (
-                    <a
-                      href={`https://github.com/${agent.github_username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-text-muted hover:text-text transition-colors"
-                      title="GitHub"
-                    >
-                      <Github className="w-4 h-4" />
-                    </a>
-                  )}
-                  {agent.twitter_handle && (
-                    <a
-                      href={`https://twitter.com/${agent.twitter_handle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-text-muted hover:text-text transition-colors"
-                      title="Twitter"
-                    >
-                      <Twitter className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-              )}
+              {/* Social links - always show Moltbook, plus any others */}
+              <div className="flex items-center gap-3 mt-3">
+                {/* Moltbook - always present */}
+                <a
+                  href={`https://moltbook.com/u/${agent.moltbook_handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-[#e01b24]/10 hover:bg-[#e01b24]/20 text-[#e01b24] rounded-full text-xs font-medium transition-colors"
+                  title="Moltbook Profile"
+                >
+                  <span>🦞</span>
+                  <span>Moltbook</span>
+                </a>
+                {agent.website && (
+                  <a
+                    href={agent.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2 py-1 bg-bg-elevated hover:bg-bg-elevated/80 text-text-muted hover:text-text rounded-full text-xs transition-colors"
+                    title="Website"
+                  >
+                    <Globe className="w-3 h-3" />
+                    <span>Website</span>
+                  </a>
+                )}
+                {agent.github_username && (
+                  <a
+                    href={`https://github.com/${agent.github_username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2 py-1 bg-bg-elevated hover:bg-bg-elevated/80 text-text-muted hover:text-text rounded-full text-xs transition-colors"
+                    title="GitHub"
+                  >
+                    <Github className="w-3 h-3" />
+                    <span>GitHub</span>
+                  </a>
+                )}
+                {agent.twitter_handle && (
+                  <a
+                    href={`https://twitter.com/${agent.twitter_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2 py-1 bg-bg-elevated hover:bg-bg-elevated/80 text-text-muted hover:text-text rounded-full text-xs transition-colors"
+                    title="Twitter"
+                  >
+                    <Twitter className="w-3 h-3" />
+                    <span>Twitter</span>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
