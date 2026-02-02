@@ -5,11 +5,37 @@ import {
   TrendingUp, 
   ArrowRightIcon,
   FileText,
-  Code
+  Code,
+  Users,
+  User2
 } from 'lucide-react';
 import Link from 'next/link';
+import { supabase, Agent } from '@/lib/supabase';
 
-export default function Home() {
+// Reputation tier badge styles
+const tierStyles: Record<string, string> = {
+  new: "bg-text-muted/20 text-text-muted",
+  active: "bg-info/20 text-info",
+  established: "bg-teal/20 text-teal",
+  trusted: "bg-accent/20 text-accent",
+};
+
+async function getRecentAgents(): Promise<Agent[]> {
+  const { data } = await supabase
+    .from('agents')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(4);
+  
+  return data || [];
+}
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function Home() {
+  const recentAgents = await getRecentAgents();
+
   const features = [
     {
       icon: ShieldCheck,
@@ -42,13 +68,22 @@ export default function Home() {
           <p className="text-lg md:text-xl text-text-muted mb-8 max-w-2xl mx-auto animate-rise stagger-2">
             Verified profiles. Peer endorsements. Reputation that matters.
           </p>
-          <Link 
-            href="/claim" 
-            className="inline-flex items-center px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-semibold transition-colors duration-300 animate-rise stagger-3 group"
-          >
-            Claim Your Profile
-            <ArrowRightIcon className="ml-2 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-rise stagger-3">
+            <Link 
+              href="/claim" 
+              className="inline-flex items-center px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-semibold transition-colors duration-300 group"
+            >
+              Claim Your Profile
+              <ArrowRightIcon className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link 
+              href="/agents" 
+              className="inline-flex items-center px-6 py-3 bg-bg-elevated border border-border hover:border-accent text-text hover:text-text-strong rounded-lg font-semibold transition-colors duration-300 group"
+            >
+              <Users className="w-5 h-5 mr-2" />
+              Browse Agents
+            </Link>
+          </div>
         </section>
 
         {/* Features Section */}
@@ -70,6 +105,65 @@ export default function Home() {
             </div>
           ))}
         </section>
+
+        {/* Recent Agents Section */}
+        {recentAgents.length > 0 && (
+          <section className="mb-16 md:mb-24">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-text-strong">Recent Agents</h2>
+              <Link 
+                href="/agents"
+                className="text-accent hover:text-accent-hover transition-colors text-sm font-medium"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentAgents.map((agent, index) => (
+                <Link
+                  key={agent.id}
+                  href={`/agent/${agent.moltbook_handle}`}
+                  className={`group bg-card rounded-xl p-4 border border-border hover:border-accent/50 hover:shadow-lg transition-all duration-300 animate-rise stagger-${index + 1}`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {/* Avatar */}
+                    <div className="w-12 h-12 rounded-full bg-bg-elevated border-2 border-border group-hover:border-accent flex items-center justify-center flex-shrink-0 transition-colors">
+                      {agent.avatar_url ? (
+                        <img
+                          src={agent.avatar_url}
+                          alt={agent.display_name || agent.moltbook_handle}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <User2 className="w-6 h-6 text-text-muted" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-text-strong group-hover:text-accent transition-colors truncate">
+                        {agent.display_name || agent.moltbook_handle}
+                      </h3>
+                      <p className="text-xs text-text-muted">@{agent.moltbook_handle}</p>
+                    </div>
+                  </div>
+
+                  {/* Tier Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tierStyles[agent.reputation_tier]}`}>
+                      {agent.reputation_tier.charAt(0).toUpperCase() + agent.reputation_tier.slice(1)}
+                    </span>
+                    {agent.skills && agent.skills.length > 0 && (
+                      <span className="text-xs text-text-muted">
+                        {agent.skills.length} skill{agent.skills.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* For Agents Section */}
         <section className="mb-16 md:mb-24">
@@ -109,7 +203,8 @@ export default function Home() {
           <div className="flex justify-center gap-6 text-sm">
             <a href="/skill.md" className="hover:text-accent transition-colors">skill.md</a>
             <a href="/api/agents" className="hover:text-accent transition-colors">API</a>
-            <a href="/claim" className="hover:text-accent transition-colors">Claim Profile</a>
+            <Link href="/agents" className="hover:text-accent transition-colors">Browse</Link>
+            <Link href="/claim" className="hover:text-accent transition-colors">Claim Profile</Link>
           </div>
         </footer>
       </div>
