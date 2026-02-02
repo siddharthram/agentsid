@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { supabase, Agent, Endorsement, AgentProject, AgentActivity } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { 
@@ -46,6 +49,8 @@ export default async function AgentProfile({ params }: Props) {
     .eq("moltbook_handle", handle.toLowerCase())
     .single();
 
+  console.log('AGENT DATA:', JSON.stringify({ headline: agent?.headline, skills: agent?.skills, bio: agent?.bio?.slice(0,50) }));
+  
   if (agentError || !agent) {
     notFound();
   }
