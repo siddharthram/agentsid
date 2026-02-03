@@ -23,6 +23,7 @@ export default function BrowseAgents() {
   const [agents, setAgents] = useState<AgentWithEndorsements[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAgents() {
@@ -60,22 +61,48 @@ export default function BrowseAgents() {
     fetchAgents();
   }, []);
 
-  // Filter agents based on search query
-  const filteredAgents = useMemo(() => {
-    if (!searchQuery.trim()) return agents;
-    
-    const query = searchQuery.toLowerCase();
-    return agents.filter((agent) => {
-      const nameMatch = agent.display_name?.toLowerCase().includes(query);
-      const handleMatch = agent.moltbook_handle.toLowerCase().includes(query);
-      const skillsMatch = agent.skills?.some((skill) => 
-        skill.toLowerCase().includes(query)
-      );
-      const headlineMatch = agent.headline?.toLowerCase().includes(query);
-      
-      return nameMatch || handleMatch || skillsMatch || headlineMatch;
+  // Get popular skills from all agents
+  const popularSkills = useMemo(() => {
+    const skillCounts: Record<string, number> = {};
+    agents.forEach((agent) => {
+      agent.skills?.forEach((skill) => {
+        skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+      });
     });
-  }, [agents, searchQuery]);
+    return Object.entries(skillCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([skill]) => skill);
+  }, [agents]);
+
+  // Filter agents based on search query and selected skill
+  const filteredAgents = useMemo(() => {
+    let filtered = agents;
+    
+    // Filter by selected skill
+    if (selectedSkill) {
+      filtered = filtered.filter((agent) =>
+        agent.skills?.includes(selectedSkill)
+      );
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((agent) => {
+        const nameMatch = agent.display_name?.toLowerCase().includes(query);
+        const handleMatch = agent.moltbook_handle.toLowerCase().includes(query);
+        const skillsMatch = agent.skills?.some((skill) => 
+          skill.toLowerCase().includes(query)
+        );
+        const headlineMatch = agent.headline?.toLowerCase().includes(query);
+        
+        return nameMatch || handleMatch || skillsMatch || headlineMatch;
+      });
+    }
+    
+    return filtered;
+  }, [agents, searchQuery, selectedSkill]);
 
   return (
     <div className="min-h-screen bg-bg dark:bg-bg-accent text-text">
@@ -91,7 +118,7 @@ export default function BrowseAgents() {
         </div>
 
         {/* Search */}
-        <div className="max-w-xl mx-auto mb-8 animate-rise stagger-2">
+        <div className="max-w-xl mx-auto mb-6 animate-rise stagger-2">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
             <input
@@ -103,6 +130,34 @@ export default function BrowseAgents() {
             />
           </div>
         </div>
+
+        {/* Skill Filters */}
+        {popularSkills.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-8 animate-rise stagger-3">
+            <span className="text-xs text-text-muted mr-1">Filter by skill:</span>
+            {selectedSkill && (
+              <button
+                onClick={() => setSelectedSkill(null)}
+                className="px-3 py-1 bg-bg-elevated text-text-muted text-xs rounded-full hover:text-text transition-colors"
+              >
+                Clear ×
+              </button>
+            )}
+            {popularSkills.map((skill) => (
+              <button
+                key={skill}
+                onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}
+                className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                  selectedSkill === skill
+                    ? 'bg-accent text-white'
+                    : 'bg-accent/10 text-accent hover:bg-accent/20'
+                }`}
+              >
+                {skill}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
