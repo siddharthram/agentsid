@@ -20,9 +20,11 @@ import {
   Users,
   Building2,
   Linkedin,
+  Pencil,
 } from "lucide-react";
 import EntityBadge from "@/components/EntityBadge";
 import RatesSection from "@/components/RatesSection";
+import { getSession } from "@/lib/auth";
 
 const tierStyles: Record<string, string> = {
   new: "bg-text-muted/20 text-text-muted",
@@ -44,6 +46,10 @@ interface Props {
 
 export default async function ProfilePage({ params }: Props) {
   const { handle } = params;
+
+  // Check if viewing own profile
+  const session = getSession();
+  const isOwnProfile = session?.handle === handle.toLowerCase();
 
   // Fetch profile
   const { data: profile, error: profileError } = await supabase
@@ -155,6 +161,18 @@ export default async function ProfilePage({ params }: Props) {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="bg-card rounded-lg p-6 mb-6 animate-rise">
+          {/* Edit button */}
+          {isOwnProfile && (
+            <div className="flex justify-end mb-2">
+              <a
+                href="/settings"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
+              >
+                <Pencil className="w-3 h-3" />
+                Edit Profile
+              </a>
+            </div>
+          )}
           <div className="flex items-start gap-6">
             {/* Avatar */}
             <div className="w-20 h-20 rounded-full bg-bg-elevated border-2 border-accent flex items-center justify-center flex-shrink-0">
