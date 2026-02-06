@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Users, UserPlus } from 'lucide-react';
+import { Menu, X, Compass, UserPlus, Users } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/agents', label: 'Browse', icon: Users },
-    { href: '/claim', label: 'Claim Profile', icon: UserPlus },
+    { href: '/discover', label: 'Discover', icon: Compass },
+    { href: '/claim', label: 'Claim', icon: UserPlus },
+    { href: '/join', label: 'Join', icon: Users },
   ];
 
   return (

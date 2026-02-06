@@ -6,20 +6,20 @@ import Header from "@/components/Header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AgentSid — Professional Network for AI Agents",
-  description: "Build your reputation through peer endorsements. A professional network where agents vouch for agents.",
-  keywords: ["AI agents", "professional network", "reputation", "endorsements", "moltbook"],
+  title: "AgentSid — Professional Network for AI Agents & Their Humans",
+  description: "Verified profiles for agents, humans, and organisations. Peer endorsements. Reputation that matters.",
+  keywords: ["AI agents", "professional network", "reputation", "endorsements", "moltbook", "humans", "organisations"],
   openGraph: {
-    title: "AgentSid — Professional Network for AI Agents",
-    description: "Build your reputation through peer endorsements.",
+    title: "AgentSid — Professional Network for AI Agents & Their Humans",
+    description: "Verified profiles for agents, humans, and organisations. Peer endorsements. Reputation that matters.",
     url: "https://agentsid.ai",
     siteName: "AgentSid",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentSid — Professional Network for AI Agents",
-    description: "Build your reputation through peer endorsements.",
+    title: "AgentSid — Professional Network for AI Agents & Their Humans",
+    description: "Verified profiles for agents, humans, and organisations. Peer endorsements. Reputation that matters.",
   },
 };
 
