@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, User2, Loader2, CheckCircle, Linkedin } from 'lucide-react';
+import { Save, User2, Loader2, CheckCircle, Linkedin, Plus, Trash2, DollarSign } from 'lucide-react';
 import EntityBadge from '@/components/EntityBadge';
-import { Profile, EntityType } from '@/lib/supabase';
+import { Profile, Rate, EntityType } from '@/lib/supabase';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -23,6 +23,20 @@ export default function SettingsPage() {
   const [githubUsername, setGithubUsername] = useState('');
   const [twitterHandle, setTwitterHandle] = useState('');
   const [website, setWebsite] = useState('');
+
+  // Rates state
+  const [rates, setRates] = useState<Rate[]>([]);
+  const [showAddRate, setShowAddRate] = useState(false);
+  const [newRate, setNewRate] = useState({
+    service_name: '',
+    description: '',
+    rate_min: '',
+    rate_max: '',
+    rate_unit: 'hour' as Rate['rate_unit'],
+    currency: 'USD' as Rate['currency'],
+    turnaround: '',
+    is_available: true,
+  });
 
   useEffect(() => {
     async function fetchProfile() {
@@ -43,6 +57,12 @@ export default function SettingsPage() {
         setGithubUsername(data.github_username || '');
         setTwitterHandle(data.twitter_handle || '');
         setWebsite(data.website || data.website_url || '');
+        // Fetch rates
+        const ratesRes = await fetch('/api/me/rates');
+        if (ratesRes.ok) {
+          const ratesData = await ratesRes.json();
+          setRates(ratesData.rates || []);
+        }
       } catch (err) {
         setError('Failed to load profile');
       } finally {
@@ -51,6 +71,46 @@ export default function SettingsPage() {
     }
     fetchProfile();
   }, [router]);
+
+  const addRate = async () => {
+    if (!newRate.service_name || !newRate.rate_unit) return;
+    try {
+      const res = await fetch('/api/me/rates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newRate,
+          rate_min: newRate.rate_min ? Number(newRate.rate_min) : null,
+          rate_max: newRate.rate_max ? Number(newRate.rate_max) : null,
+          sort_order: rates.length,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to add rate');
+      const rate = await res.json();
+      setRates([...rates, rate]);
+      setNewRate({
+        service_name: '', description: '', rate_min: '', rate_max: '',
+        rate_unit: 'hour', currency: 'USD', turnaround: '', is_available: true,
+      });
+      setShowAddRate(false);
+    } catch (err) {
+      setError('Failed to add rate');
+    }
+  };
+
+  const deleteRate = async (id: string) => {
+    try {
+      const res = await fetch('/api/me/rates', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error('Failed to delete rate');
+      setRates(rates.filter(r => r.id !== id));
+    } catch (err) {
+      setError('Failed to delete rate');
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,6 +319,170 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Rates */}
+          <div className="bg-card rounded-lg p-6 animate-rise stagger-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Rates
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddRate(!showAddRate)}
+                className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-full transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Rate
+              </button>
+            </div>
+
+            {/* Existing rates */}
+            {rates.length > 0 ? (
+              <div className="space-y-3 mb-4">
+                {rates.map((rate) => {
+                  const currSymbol = rate.currency === 'USD' ? '$' : rate.currency === 'EUR' ? '€' : rate.currency === 'GBP' ? '£' : rate.currency + ' ';
+                  const unitLabel = rate.rate_unit === 'custom' ? rate.custom_unit : rate.rate_unit;
+                  let priceStr = '';
+                  if (rate.rate_min != null && rate.rate_max != null) {
+                    priceStr = `${currSymbol}${Number(rate.rate_min).toLocaleString()}–${Number(rate.rate_max).toLocaleString()} / ${unitLabel}`;
+                  } else if (rate.rate_min != null) {
+                    priceStr = `${currSymbol}${Number(rate.rate_min).toLocaleString()}+ / ${unitLabel}`;
+                  } else if (rate.rate_max != null) {
+                    priceStr = `Up to ${currSymbol}${Number(rate.rate_max).toLocaleString()} / ${unitLabel}`;
+                  } else {
+                    priceStr = `Contact for pricing`;
+                  }
+
+                  return (
+                    <div key={rate.id} className="flex items-center justify-between p-3 bg-bg-elevated rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-strong font-medium">{rate.service_name}</p>
+                        <p className="text-xs text-accent font-semibold">{priceStr}</p>
+                        {rate.turnaround && (
+                          <p className="text-xs text-text-muted">{rate.turnaround}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteRate(rate.id)}
+                        className="p-1.5 text-text-muted hover:text-danger transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted mb-4">No rates added yet. Add your rates so others know your pricing.</p>
+            )}
+
+            {/* Add rate form */}
+            {showAddRate && (
+              <div className="border border-border rounded-lg p-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-text mb-1">Service Name *</label>
+                  <input
+                    type="text"
+                    value={newRate.service_name}
+                    onChange={(e) => setNewRate({ ...newRate, service_name: e.target.value })}
+                    placeholder="e.g. AI Strategy Consulting, Agent Fleet Setup"
+                    className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={newRate.description}
+                    onChange={(e) => setNewRate({ ...newRate, description: e.target.value })}
+                    placeholder="Optional details about this service"
+                    className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent transition-colors"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text mb-1">Min Price</label>
+                    <input
+                      type="number"
+                      value={newRate.rate_min}
+                      onChange={(e) => setNewRate({ ...newRate, rate_min: e.target.value })}
+                      placeholder="50"
+                      className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text mb-1">Max Price</label>
+                    <input
+                      type="number"
+                      value={newRate.rate_max}
+                      onChange={(e) => setNewRate({ ...newRate, rate_max: e.target.value })}
+                      placeholder="200"
+                      className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text mb-1">Unit *</label>
+                    <select
+                      value={newRate.rate_unit}
+                      onChange={(e) => setNewRate({ ...newRate, rate_unit: e.target.value as Rate['rate_unit'] })}
+                      className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text focus:outline-none focus:border-accent transition-colors"
+                    >
+                      <option value="hour">Per Hour</option>
+                      <option value="day">Per Day</option>
+                      <option value="month">Per Month</option>
+                      <option value="task">Per Task</option>
+                      <option value="token">Per 1K Tokens</option>
+                      <option value="call">Per API Call</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text mb-1">Currency</label>
+                    <select
+                      value={newRate.currency}
+                      onChange={(e) => setNewRate({ ...newRate, currency: e.target.value as Rate['currency'] })}
+                      className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text focus:outline-none focus:border-accent transition-colors"
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text mb-1">Turnaround</label>
+                  <input
+                    type="text"
+                    value={newRate.turnaround}
+                    onChange={(e) => setNewRate({ ...newRate, turnaround: e.target.value })}
+                    placeholder="e.g. Same day, 1-2 weeks, Instant"
+                    className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent transition-colors"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddRate(false)}
+                    className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addRate}
+                    disabled={!newRate.service_name}
+                    className="px-4 py-2 text-sm bg-accent hover:bg-accent-hover disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Add Rate
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Error / Success */}
