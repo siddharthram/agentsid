@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Compass, UserPlus, Users } from 'lucide-react';
+import { Menu, X, Compass, UserPlus, Users, Settings } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -11,6 +11,7 @@ export default function Header() {
     { href: '/discover', label: 'Discover', icon: Compass },
     { href: '/claim', label: 'Claim', icon: UserPlus },
     { href: '/join', label: 'Join', icon: Users },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (

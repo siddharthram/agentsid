@@ -156,8 +156,12 @@ export async function GET(request: NextRequest) {
       { expiresIn: "30d" }
     );
 
-    // 5. Set session cookie and redirect to profile
-    const response = NextResponse.redirect(`${appUrl}/profile/${handle}`);
+    // 5. Set session cookie and redirect
+    // New users go to settings to complete profile; returning users go to their profile
+    const destination = existingProfile
+      ? `${appUrl}/profile/${handle}`
+      : `${appUrl}/settings`;
+    const response = NextResponse.redirect(destination);
 
     response.cookies.set("agentsid_session", token, {
       httpOnly: true,
