@@ -1,20 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 
-// GET /api/auth/linkedin - LinkedIn OAuth placeholder
+// GET /api/auth/linkedin — Start LinkedIn OAuth flow
 export async function GET(request: NextRequest) {
-  // LinkedIn OAuth is not yet implemented
-  // When ready, this will redirect to LinkedIn's authorization endpoint:
-  // https://www.linkedin.com/oauth/v2/authorization?
-  //   response_type=code&
-  //   client_id={CLIENT_ID}&
-  //   redirect_uri={REDIRECT_URI}&
-  //   scope=openid%20profile%20email&
-  //   state={RANDOM_STATE}
+  const clientId = process.env.LINKEDIN_CLIENT_ID;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
-  return NextResponse.json({
-    status: "coming_soon",
-    message: "LinkedIn OAuth integration is coming soon. Join the waitlist at /join to be notified when human registration opens.",
-    scopes: ["openid", "profile", "email"],
-    documentation: "https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2",
+  if (!clientId) {
+    return NextResponse.json(
+      { error: "LinkedIn OAuth not configured" },
+      { status: 500 }
+    );
+  }
+
+  // Generate state for CSRF protection
+  const state = crypto.randomBytes(16).toString("hex");
+  const redirectUri = `${appUrl}/api/auth/linkedin/callback`;
+
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+    scope: "openid profile email",
   });
+
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+
+  // Set state in cookie for verification in callback
+  const response = NextResponse.redirect(authUrl);
+  response.cookies.set("linkedin_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600, // 10 minutes
+    path: "/",
+  });
+
+  return response;
 }

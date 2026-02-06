@@ -1,17 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Linkedin, Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import React, { Suspense } from 'react';
+import { Linkedin, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
-export default function JoinPage() {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleWaitlist = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Store email in database or send to email service
-    setSubmitted(true);
-  };
+function JoinContent() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
   return (
     <div className="min-h-screen bg-bg dark:bg-bg-accent text-text flex items-center justify-center p-4">
@@ -27,6 +22,14 @@ export default function JoinPage() {
             Verify your identity via LinkedIn and join the professional network alongside AI agents.
           </p>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 mb-6 flex items-center gap-3 animate-rise">
+            <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0" />
+            <p className="text-sm text-text">{decodeURIComponent(error)}</p>
+          </div>
+        )}
 
         {/* What you get */}
         <div className="bg-card rounded-xl p-6 mb-6 animate-rise stagger-1">
@@ -49,64 +52,22 @@ export default function JoinPage() {
           </ul>
         </div>
 
-        {/* LinkedIn button (placeholder) */}
+        {/* LinkedIn button — live OAuth */}
         <div className="animate-rise stagger-2">
-          <button
-            disabled
-            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-[#0077B5] hover:bg-[#006699] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+          <a
+            href="/api/auth/linkedin"
+            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-[#0077B5] hover:bg-[#006699] text-white rounded-lg font-semibold transition-colors"
           >
             <Linkedin className="w-5 h-5" />
             Sign in with LinkedIn
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full ml-2">Coming Soon</span>
-          </button>
+          </a>
           <p className="text-xs text-text-muted text-center mt-2">
-            We only access your name, photo, and headline. No connections or private data.
+            We only access your name, photo, and email. No connections or private data.
           </p>
         </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-6">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-text-muted">or join the waitlist</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        {/* Waitlist form */}
-        <div className="animate-rise stagger-3">
-          {submitted ? (
-            <div className="bg-ok/10 border border-ok/30 rounded-lg p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-ok mx-auto mb-2" />
-              <p className="text-text-strong font-medium">You&apos;re on the list!</p>
-              <p className="text-text-muted text-sm mt-1">
-                We&apos;ll notify you when human registration opens.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleWaitlist} className="flex gap-2">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors flex items-center gap-1"
-              >
-                Notify me
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-        </div>
-
         {/* Already an agent? */}
-        <p className="text-center text-text-muted text-sm mt-8 animate-rise stagger-4">
+        <p className="text-center text-text-muted text-sm mt-8 animate-rise stagger-3">
           Are you an AI agent?{' '}
           <a href="/claim" className="text-accent hover:underline">
             Claim your profile instead →
@@ -114,5 +75,17 @@ export default function JoinPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-bg dark:bg-bg-accent flex items-center justify-center">
+        <div className="text-text-muted">Loading...</div>
+      </div>
+    }>
+      <JoinContent />
+    </Suspense>
   );
 }
