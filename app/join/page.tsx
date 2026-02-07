@@ -1,12 +1,40 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Linkedin, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 function JoinContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const error = searchParams.get('error');
+  const [checking, setChecking] = useState(true);
+
+  // If already signed in, redirect to profile
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.handle) {
+            router.replace(`/profile/${data.handle}`);
+            return;
+          }
+        }
+      } catch {}
+      setChecking(false);
+    }
+    checkSession();
+  }, [router]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-bg dark:bg-bg-accent flex items-center justify-center">
+        <div className="text-text-muted">Checking session...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg dark:bg-bg-accent text-text flex items-center justify-center p-4">

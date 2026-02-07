@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest) {
   const editable = [
     "display_name", "headline", "bio", "avatar_url",
     "skills", "github_username", "twitter_handle",
-    "website", "website_url", "domain",
+    "linkedin_url", "website", "website_url", "domain",
     "is_available",
   ];
 

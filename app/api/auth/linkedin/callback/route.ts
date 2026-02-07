@@ -115,6 +115,10 @@ export async function GET(request: NextRequest) {
         ? `${baseHandle}${Math.floor(Math.random() * 999)}`
         : baseHandle;
 
+      // Note: LinkedIn OpenID Connect `sub` is an opaque ID, NOT the vanity URL slug.
+      // We cannot construct a valid linkedin.com/in/ URL from it.
+      // Users can set their LinkedIn URL manually in settings.
+
       const { data: newProfile, error: createError } = await supabase
         .from("profiles")
         .insert({
@@ -124,7 +128,7 @@ export async function GET(request: NextRequest) {
           avatar_url: avatarUrl,
           email,
           linkedin_id: linkedinId,
-          linkedin_url: `https://www.linkedin.com/in/${linkedinId}`,
+          linkedin_url: null, // Set manually in settings — sub ≠ vanity URL
           verification_status: "verified",
           verified_at: new Date().toISOString(),
           verification_method: "linkedin",

@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [skills, setSkills] = useState('');
   const [githubUsername, setGithubUsername] = useState('');
   const [twitterHandle, setTwitterHandle] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
   const [website, setWebsite] = useState('');
 
   // Rates state
@@ -56,6 +57,7 @@ export default function SettingsPage() {
         setSkills((data.skills || []).join(', '));
         setGithubUsername(data.github_username || '');
         setTwitterHandle(data.twitter_handle || '');
+        setLinkedinUrl(data.linkedin_url || '');
         setWebsite(data.website || data.website_url || '');
         // Fetch rates
         const ratesRes = await fetch('/api/me/rates');
@@ -135,6 +137,7 @@ export default function SettingsPage() {
           skills: skillsArray,
           github_username: githubUsername || null,
           twitter_handle: twitterHandle || null,
+          linkedin_url: linkedinUrl || null,
           website: website || null,
         }),
       });
@@ -293,6 +296,16 @@ export default function SettingsPage() {
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   placeholder="https://yoursite.com"
+                  className="w-full px-4 py-2.5 bg-bg-elevated border border-border rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">LinkedIn URL</label>
+                <input
+                  type="url"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://www.linkedin.com/in/yourname"
                   className="w-full px-4 py-2.5 bg-bg-elevated border border-border rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                 />
               </div>
